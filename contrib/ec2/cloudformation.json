@@ -2,5 +2,13 @@
     {
         "ParameterKey":     "KeyPair",
         "ParameterValue":   "deis"
+    },
+    {
+        "ParameterKey":     "InstanceType",
+        "ParameterValue":   "r3.large"
+    },
+    {
+        "ParameterKey":     "SpotPrice",
+        "ParameterValue":   "0.2"
     }
 ]
