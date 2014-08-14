@@ -229,7 +229,7 @@
         "SecurityGroups": [ { "Fn::GetAtt": ["VPCSecurityGroup", "GroupId"] } ],
         "BlockDeviceMappings" : [
           {
-            "DeviceName" : "/dev/sda",
+            "DeviceName" : "/dev/xvda",
             "Ebs" : { "VolumeSize" : "100" }
           }
         ]

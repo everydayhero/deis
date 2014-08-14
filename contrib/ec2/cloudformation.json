@@ -8,6 +8,10 @@
         "ParameterValue":   "r3.large"
     },
     {
+      "ParameterKey": "EC2VirtualizationType",
+      "ParameterValue": "HVM"
+    },
+    {
         "ParameterKey":     "SpotPrice",
         "ParameterValue":   "0.2"
     }
