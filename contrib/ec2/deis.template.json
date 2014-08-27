@@ -84,7 +84,7 @@
 
   "Mappings" : {
     "CoreOSAMIs" : {
-      "us-east-1"      : { "PV" : "ami-b85786d0", "HVM" : "ami-a65786ce" },
+      "us-east-1"      : { "PV" : "ami-04a2766c", "HVM" : "ami-02a2766a" },
       "us-west-2"      : { "PV" : "ami-cfafd5ff", "HVM" : "ami-cdafd5fd" },
       "us-west-1"      : { "PV" : "ami-45151800", "HVM" : "ami-bb1a17fe" },
       "eu-west-1"      : { "PV" : "ami-72865b05", "HVM" : "ami-74865b03" },
