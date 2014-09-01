@@ -148,6 +148,8 @@
           { "Key" : "Network", "Value" : "Private" }
         ]
       }
+    },
+    "InternetGateway" : {
       "Type" : "AWS::EC2::InternetGateway",
       "Properties" : {
         "Tags" : [
