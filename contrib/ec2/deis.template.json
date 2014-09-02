@@ -324,6 +324,14 @@
     "DNSName" : {
       "Description" : "DNS Name of the ELB",
       "Value" :  { "Fn::GetAtt" : ["DeisWebELB", "DNSName"] }
+    },
+    "Vpc" : {
+      "Description" : "VPC for Deis setup",
+      "Value" :  { "Ref" : "VPC" }
+    },
+    "RouteTable" : {
+      "Description" : "RouteTable for Deis setup",
+      "Value" :  { "Ref" : "PublicRouteTable" }
     }
   }
 }
