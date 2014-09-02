@@ -79,6 +79,10 @@
       "Default": "true",
       "AllowedValues" : [ "true", "false" ],
       "ConstraintDescription" : "must be either true or false"
+    },
+    "DeisNodeName": {
+      "Type": "String",
+      "Description": "CoreOS node names in EC2"
     }
   },
 
@@ -224,7 +228,7 @@
         "MaxSize": "12",
         "DesiredCapacity": {"Ref": "ClusterSize"},
         "Tags": [
-            {"Key": "Name", "Value": "Deis", "PropagateAtLaunch": true}
+            {"Key": "Name", "Value": { "Ref": "DeisNodeName" }, "PropagateAtLaunch": true}
         ],
         "LoadBalancerNames": [
           { "Ref": "DeisWebELB" }
