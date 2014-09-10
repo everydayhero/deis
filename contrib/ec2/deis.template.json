@@ -14,6 +14,10 @@
       "Description" : "List of availability zones to create cluster in.",
       "Type" : "CommaDelimitedList"
     },
+    "SecurityGroups" : {
+      "Description" : "List of additional security groups to add to cluster nodes. Note: Due to CF limitations, each must be added manually to the LaunchConfig.",
+      "Type" : "CommaDelimitedList"
+    },
     "KeyPair" : {
       "Description" : "Name of an existing EC2 KeyPair to enable SSH access to the Deis hosts",
       "Type" : "String",
@@ -137,7 +141,8 @@
         "KeyName": {"Ref": "KeyPair"},
         "UserData" : { "Fn::Base64": { "Fn::Join": [ "", [ ] ] } },
         "AssociatePublicIpAddress": {"Ref": "AssociatePublicIP"},
-        "SecurityGroups": [ { "Fn::GetAtt": ["VPCSecurityGroup", "GroupId"] } ],
+        "SecurityGroups": [ {"Fn::Select": [0, {"Ref": "SecurityGroups"}]},
+          { "Fn::GetAtt": ["VPCSecurityGroup", "GroupId"] } ],
         "BlockDeviceMappings" : [
           {
             "DeviceName" : "/dev/xvda",
