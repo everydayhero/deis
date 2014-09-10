@@ -2,6 +2,18 @@
   "AWSTemplateFormatVersion" : "2010-09-09",
   "Description": "Deis on EC2: http://deis.io/",
   "Parameters" : {
+    "VpcId" : {
+      "Description" : "VPC ID to create the cluster in",
+      "Type" : "String"
+    },
+    "SubnetIds" : {
+      "Description" : "List of subnets to create cluster in.",
+      "Type" : "CommaDelimitedList"
+    },
+    "AvailabilityZones" : {
+      "Description" : "List of availability zones to create cluster in.",
+      "Type" : "CommaDelimitedList"
+    },
     "KeyPair" : {
       "Description" : "Name of an existing EC2 KeyPair to enable SSH access to the Deis hosts",
       "Type" : "String",
@@ -96,133 +108,15 @@
       "ap-southeast-2" : { "PV" : "ami-3ba8ce01", "HVM" : "ami-0d98fe37" },
       "ap-northeast-1" : { "PV" : "ami-47cb9246", "HVM" : "ami-49cb9248" },
       "sa-east-1"      : { "PV" : "ami-e1f65efc", "HVM" : "ami-e7f65efa" }
-    },
-    "SubnetConfig" : {
-      "VPC"     : { "CIDR" : "10.21.0.0/16" },
-      "Subnet1" : { "CIDR" : "10.21.1.0/24" },
-      "Subnet2" : { "CIDR" : "10.21.2.0/24" },
-      "Subnet3" : { "CIDR" : "10.21.3.0/24" }
     }
   },
 
   "Resources" : {
-    "VPC" : {
-      "Type" : "AWS::EC2::VPC",
-      "Properties" : {
-        "EnableDnsSupport" : "true",
-        "EnableDnsHostnames" : "true",
-        "CidrBlock" : { "Fn::FindInMap" : [ "SubnetConfig", "VPC", "CIDR" ]},
-        "Tags" : [
-          { "Key" : "Application", "Value" : "Deis" }
-        ]
-      }
-    },
-    "Subnet1" : {
-      "Type" : "AWS::EC2::Subnet",
-      "Properties" : {
-        "VpcId" : { "Ref" : "VPC" },
-        "AvailabilityZone": { "Fn::Select" : [ 0, { "Fn::GetAZs" : "" } ] },
-        "CidrBlock" : { "Fn::FindInMap" : [ "SubnetConfig", "Subnet1", "CIDR" ]},
-        "Tags" : [
-          { "Key" : "Application", "Value" : "Deis" },
-          { "Key" : "Network", "Value" : "Private" }
-        ]
-      }
-    },
-    "Subnet2" : {
-      "Type" : "AWS::EC2::Subnet",
-      "Properties" : {
-        "VpcId" : { "Ref" : "VPC" },
-        "AvailabilityZone": { "Fn::Select" : [ 1, { "Fn::GetAZs" : "" } ] },
-        "CidrBlock" : { "Fn::FindInMap" : [ "SubnetConfig", "Subnet2", "CIDR" ]},
-        "Tags" : [
-          { "Key" : "Application", "Value" : "Deis" },
-          { "Key" : "Network", "Value" : "Private" }
-        ]
-      }
-    },
-    "Subnet3" : {
-      "Type" : "AWS::EC2::Subnet",
-      "Properties" : {
-        "VpcId" : { "Ref" : "VPC" },
-        "AvailabilityZone": { "Fn::Select" : [ 2, { "Fn::GetAZs" : "" } ] },
-        "CidrBlock" : { "Fn::FindInMap" : [ "SubnetConfig", "Subnet3", "CIDR" ]},
-        "Tags" : [
-          { "Key" : "Application", "Value" : "Deis" },
-          { "Key" : "Network", "Value" : "Private" }
-        ]
-      }
-    },
-    "InternetGateway" : {
-      "Type" : "AWS::EC2::InternetGateway",
-      "Properties" : {
-        "Tags" : [
-          { "Key" : "Application", "Value" : "Deis" },
-          { "Key" : "Network", "Value" : "Public" }
-        ]
-      }
-    },
-    "GatewayToInternet" : {
-       "Type" : "AWS::EC2::VPCGatewayAttachment",
-       "Properties" : {
-         "VpcId" : { "Ref" : "VPC" },
-         "InternetGatewayId" : { "Ref" : "InternetGateway" }
-       }
-    },
-    "PublicRouteTable" : {
-      "Type" : "AWS::EC2::RouteTable",
-      "DependsOn" : "GatewayToInternet",
-      "Properties" : {
-        "VpcId" : { "Ref" : "VPC" },
-        "Tags" : [
-          { "Key" : "Application", "Value" : "Deis" },
-          { "Key" : "Network", "Value" : "Public" }
-        ]
-      }
-    },
-    "PublicRoute" : {
-      "Type" : "AWS::EC2::Route",
-      "DependsOn" : "GatewayToInternet",
-      "Properties" : {
-        "RouteTableId" : { "Ref" : "PublicRouteTable" },
-        "DestinationCidrBlock" : "0.0.0.0/0",
-        "GatewayId" : { "Ref" : "InternetGateway" }
-      }
-    },
-    "Subnet1RouteTableAssociation" : {
-      "Type" : "AWS::EC2::SubnetRouteTableAssociation",
-      "Properties" : {
-        "SubnetId" : { "Ref" : "Subnet1" },
-        "RouteTableId" : { "Ref" : "PublicRouteTable" }
-      }
-    },
-    "Subnet2RouteTableAssociation" : {
-      "Type" : "AWS::EC2::SubnetRouteTableAssociation",
-      "Properties" : {
-        "SubnetId" : { "Ref" : "Subnet2" },
-        "RouteTableId" : { "Ref" : "PublicRouteTable" }
-      }
-    },
-    "Subnet3RouteTableAssociation" : {
-      "Type" : "AWS::EC2::SubnetRouteTableAssociation",
-      "Properties" : {
-        "SubnetId" : { "Ref" : "Subnet3" },
-        "RouteTableId" : { "Ref" : "PublicRouteTable" }
-      }
-    },
     "CoreOSServerAutoScale": {
       "Type": "AWS::AutoScaling::AutoScalingGroup",
       "Properties": {
-        "AvailabilityZones": [
-          { "Fn::GetAtt" : [ "Subnet1", "AvailabilityZone" ] },
-          { "Fn::GetAtt" : [ "Subnet2", "AvailabilityZone" ] },
-          { "Fn::GetAtt" : [ "Subnet3", "AvailabilityZone" ] }
-        ],
-        "VPCZoneIdentifier": [
-          { "Ref" : "Subnet1" },
-          { "Ref" : "Subnet2" },
-          { "Ref" : "Subnet3" }
-        ],
+        "AvailabilityZones": { "Ref": "AvailabilityZones" },
+        "VPCZoneIdentifier": { "Ref": "SubnetIds" },
         "LaunchConfigurationName": {"Ref": "CoreOSServerLaunchConfig"},
         "MinSize": "3",
         "MaxSize": "12",
@@ -237,7 +131,6 @@
     },
     "CoreOSServerLaunchConfig": {
       "Type": "AWS::AutoScaling::LaunchConfiguration",
-      "DependsOn" : "GatewayToInternet",
       "Properties": {
         "ImageId" : { "Fn::FindInMap" : [ "CoreOSAMIs", { "Ref" : "AWS::Region" }, { "Ref" : "EC2VirtualizationType" }]},
         "InstanceType": {"Ref": "InstanceType"},
@@ -255,7 +148,6 @@
     },
     "DeisWebELB": {
       "Type": "AWS::ElasticLoadBalancing::LoadBalancer",
-      "DependsOn" : "GatewayToInternet",
       "Properties": {
         "HealthCheck": {
           "HealthyThreshold": "4",
@@ -264,11 +156,7 @@
           "Timeout": "5",
           "UnhealthyThreshold": "2"
         },
-        "Subnets": [
-          { "Ref" : "Subnet1" },
-          { "Ref" : "Subnet2" },
-          { "Ref" : "Subnet3" }
-        ],
+        "Subnets": { "Ref": "SubnetIds" },
         "Listeners": [
           {
             "InstancePort": "80",
@@ -298,7 +186,7 @@
           {"IpProtocol": "tcp", "FromPort": "80", "ToPort": "80", "CidrIp": "0.0.0.0/0"},
           {"IpProtocol": "tcp", "FromPort": "2222", "ToPort": "2222", "CidrIp": "0.0.0.0/0"}
         ],
-        "VpcId": { "Ref" : "VPC" }
+        "VpcId": { "Ref" : "VpcId" }
       }
     },
     "VPCSecurityGroup" : {
@@ -310,7 +198,7 @@
           {"IpProtocol": "tcp", "FromPort": "80", "ToPort": "80", "SourceSecurityGroupId": { "Ref": "DeisWebELBSecurityGroup" } },
           {"IpProtocol": "tcp", "FromPort": "2222", "ToPort": "2222", "SourceSecurityGroupId": { "Ref": "DeisWebELBSecurityGroup" } }
         ],
-        "VpcId" : { "Ref" : "VPC" }
+        "VpcId" : { "Ref" : "VpcId" }
       }
     },
     "VPCSecurityGroupIngress": {
@@ -328,14 +216,6 @@
     "DNSName" : {
       "Description" : "DNS Name of the ELB",
       "Value" :  { "Fn::GetAtt" : ["DeisWebELB", "DNSName"] }
-    },
-    "Vpc" : {
-      "Description" : "VPC for Deis setup",
-      "Value" :  { "Ref" : "VPC" }
-    },
-    "RouteTable" : {
-      "Description" : "RouteTable for Deis setup",
-      "Value" :  { "Ref" : "PublicRouteTable" }
     }
   }
 }
