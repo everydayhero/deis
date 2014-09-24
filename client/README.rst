@@ -78,7 +78,7 @@ you used to provision the server. You can make a symlink or shell alias for
 
 .. code-block:: console
 
-    $ pip install docopt==0.6.2 python-dateutil==2.2 PyYAML==3.11 requests==2.3.0
+    $ pip install docopt==0.6.2 python-dateutil==2.2 requests==2.3.0 termcolor==1.1.0
     $ sudo ln -fs $(pwd)/client/deis.py /usr/local/bin/deis
     $ deis
     Usage: deis <command> [<args>...]
@@ -86,9 +86,9 @@ you used to provision the server. You can make a symlink or shell alias for
 If you don't have Python_ installed, you can download a binary executable
 version of the Deis client for Mac OS X, Linux amd64, or Windows:
 
-    - https://s3-us-west-2.amazonaws.com/opdemand/deis-osx-dev.tgz
-    - https://s3-us-west-2.amazonaws.com/opdemand/deis-ubuntu-dev.tgz
-    - https://s3-us-west-2.amazonaws.com/opdemand/deis-win64-dev.zip
+    - https://s3-us-west-2.amazonaws.com/opdemand/deis-0.12.0-darwin.tgz
+    - https://s3-us-west-2.amazonaws.com/opdemand/deis-0.12.0-linux.tgz
+    - https://s3-us-west-2.amazonaws.com/opdemand/deis-0.12.0-win64.tgz
 
 
 2. `Register a User`_:

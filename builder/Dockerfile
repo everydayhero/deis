@@ -9,7 +9,7 @@ RUN apt-get update && apt-get install -yq \
     openssh-server git \
     aufs-tools iptables lxc \
     curl \
-    lxc-docker-1.1.2
+    lxc-docker-1.2.0
 
 # configure ssh server
 RUN rm /etc/ssh/ssh_host_*
@@ -38,7 +38,7 @@ RUN echo "%git    ALL=(ALL:ALL) NOPASSWD:/home/git/builder" >> /etc/sudoers
 # HACK: import progrium/cedarish as a tarball
 # see https://github.com/deis/deis/issues/1027
 RUN wget -O /progrium_cedarish.tar --progress=dot:giga \
-        https://s3-us-west-2.amazonaws.com/opdemand/progrium_cedarish_2014.08.14.tar
+        https://s3-us-west-2.amazonaws.com/opdemand/progrium_cedarish_cedar.tar
 
 # define the execution environment
 VOLUME /var/lib/docker
