@@ -63,5 +63,8 @@ contrib/ec2/cloudformation.json
 # GCE generated user-data
 contrib/gce/gce-user-data
 
+# user-data backup file
+contrib/coreos/user-data.orig
+
 # Deis generated template
 contrib/ec2/deis.generated.template.json

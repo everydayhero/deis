@@ -27,7 +27,7 @@ ssh_authorized_keys:
 [CoreOS](https://coreos.com/) on bare metal doesn't detect the `$private_ipv4` reliably. Replace all occurences in the [user-data](../coreos/user-data) with the (private) IP address of the node.
 
 ### Add environment
-Since [CoreOS](https://coreos.com/) doesn't detect private and public IP adresses the `/etc/environmnet` file doesn't get written on boot. Add it to the `write_files` section of [user-data](../coreos/user-data)
+Since [CoreOS](https://coreos.com/) doesn't detect private and public IP adresses the `/etc/environment` file doesn't get written on boot. Add it to the `write_files` section of [user-data](../coreos/user-data)
 
 ```yaml
   - path: /etc/environment
@@ -49,7 +49,7 @@ coreos-install -C alpha -c /tmp/config -d /dev/sda
 ```
 
 This will install the current [CoreOS](https://coreos.com/) release to disk. If you want to install the recommended [CoreOS](https://coreos.com/) version check the [Deis changelog](../../CHANGELOG.md)
-and specify that version by appending the `-V` parameter to the install command, e.g. `-V 402.2.0`.
+and specify that version by appending the `-V` parameter to the install command, e.g. `-V 444.0.0`.
 
 After the installation has finished reboot your server. Once your machine is back up you should be able to log in as the `core` user using the `deis` ssh key.
 
@@ -58,8 +58,8 @@ Once your server(s) are all provisioned you can proceed to install Deis. Use the
 
 ```console
 $ ssh-add ~/.ssh/deis
-$ export FLEETCTL_TUNNEL=your.server.name.here
-$ cd ../.. && make run
+$ export DEISCTL_TUNNEL=your.server.name.here
+$ deisctl install platform && deisctl start platform
 ```
 
 ## Use Deis!

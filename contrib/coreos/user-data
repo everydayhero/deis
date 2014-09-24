@@ -9,12 +9,12 @@ coreos:
     peer-addr: $private_ipv4:7001
     # give etcd more time if it's under heavy load - prevent leader election thrashing
     peer-election-timeout: 2000
-    # heartbeat interval should ideally be 1/4 or 1/5 of peer election timeout, but that's a long time...
-    peer-heartbeat-interval: 200
+    # heartbeat interval should ideally be 1/4 or 1/5 of peer election timeout
+    peer-heartbeat-interval: 500
   fleet:
     # We have to set the public_ip here so this works on Vagrant -- otherwise, Vagrant VMs
     # will all publish the same private IP. This is harmless for cloud providers.
-    public_ip: $private_ipv4
+    public-ip: $private_ipv4
     # allow etcd to slow down at times
     etcd_request_timeout: 3
   units:
@@ -22,6 +22,16 @@ coreos:
     command: start
   - name: fleet.service
     command: start
+  - name: fleet.socket
+    command: start
+    content: |
+      [Socket]
+      # Talk to the API over a Unix domain socket (default)
+      ListenStream=/var/run/fleet.sock
+      Service=fleet.service
+
+      [Install]
+      WantedBy=sockets.target
   - name: stop-update-engine.service
     command: start
     content: |
@@ -32,6 +42,15 @@ coreos:
       Type=oneshot
       ExecStart=/usr/bin/systemctl stop update-engine.service
       ExecStartPost=/usr/bin/systemctl mask update-engine.service
+  - name: install-deisctl.service
+    command: start
+    content: |
+      [Unit]
+      Description=Install deisctl utility
+
+      [Service]
+      Type=oneshot
+      ExecStart=/usr/bin/sh -c 'curl -sSL http://deis.io/deisctl/install.sh | sh'
 write_files:
   - path: /etc/deis-release
     content: |

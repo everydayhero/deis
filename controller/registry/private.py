@@ -6,9 +6,10 @@ import tarfile
 import urlparse
 import uuid
 
+from django.conf import settings
 from docker.utils import utils
 
-from django.conf import settings
+from api.utils import encode
 
 
 def publish_release(source, config, target):
@@ -53,6 +54,8 @@ def publish_release(source, config, target):
     # construct the new image
     image['parent'] = image['id']
     image['id'] = _new_id()
+    config['DEIS_APP'] = target_image
+    config['DEIS_RELEASE'] = target_tag
     image['config']['Env'] = _construct_env(image['config']['Env'], config)
     # update and tag the new image
     _commit(target_image, image, _empty_tar_archive(), target_tag)
@@ -156,7 +159,6 @@ def _put_tag(image_id, repository_path, tag):
 
 # utility functions
 
-
 def _construct_env(env, config):
     "Update current environment with latest config"
     new_env = []
@@ -166,10 +168,10 @@ def _construct_env(env, config):
         if k in config:
             # update values defined by config
             v = config.pop(k)
-        new_env.append("{}={}".format(k, v))
+        new_env.append("{}={}".format(encode(k), encode(v)))
     # add other config ENV items
     for k, v in config.items():
-        new_env.append("{}={}".format(k, v))
+        new_env.append("{}={}".format(encode(k), encode(v)))
     return new_env
 
 
