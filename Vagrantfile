@@ -11,7 +11,7 @@ else
   cpus = 1
 end
 
-COREOS_VERSION = "402.2.0"
+COREOS_VERSION = "444.0.0"
 
 Vagrant.configure("2") do |config|
   config.vm.box = "coreos-#{COREOS_VERSION}"
@@ -22,6 +22,8 @@ Vagrant.configure("2") do |config|
   end
 
   config.vm.provider :virtualbox do |vb, override|
+    vb.customize ["modifyvm", :id, "--nictype1", "Am79C973"]
+    vb.customize ["modifyvm", :id, "--nictype2", "Am79C973"]
     # Fix docker not being able to resolve private registry in VirtualBox
     vb.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
     vb.customize ["modifyvm", :id, "--natdnsproxy1", "on"]

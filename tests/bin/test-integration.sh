@@ -3,6 +3,7 @@
 # Preps a test environment and runs `make test-integration` with single-node vagrant.
 
 echo Testing ${DEIS_TEST_APP?}...
+THIS_DIR=$(cd $(dirname $0); pwd)  # absolute path
 
 # Environment reset and configuration
 rm -rf ~/.deis ~/.fleetctl ~/.ssh/known_hosts
@@ -13,7 +14,7 @@ cd ${GOPATH?}/src/github.com/deis/deis
 rm -rf tests/example-*
 
 # Vagrant provisioning
-tests/bin/halt-all-vagrant.sh
+$THIS_DIR/halt-all-vagrants.sh
 vagrant destroy --force
 vagrant up --provider virtualbox --provision
 
@@ -30,7 +31,7 @@ set -e
 # Build updated Deis CLI and use it for testing
 virtualenv --system-site-packages venv
 . venv/bin/activate
-pip install docopt==0.6.2 python-dateutil==2.2 PyYAML==3.11 requests==2.3.0 pyinstaller==2.1
+pip install docopt==0.6.2 python-dateutil==2.2 requests==2.3.0 pyinstaller==2.1 termcolor==1.1.0
 make -C client/ client
 chmod +x client/dist/deis
 export PATH=`pwd`/client/dist:$PATH

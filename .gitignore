@@ -65,3 +65,6 @@ contrib/gce/gce-user-data
 
 # Deis generated template
 contrib/ec2/deis.generated.template.json
+
+# user-data backup file
+contrib/coreos/user-data.orig

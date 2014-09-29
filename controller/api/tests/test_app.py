@@ -10,12 +10,10 @@ import json
 import os.path
 
 from django.test import TestCase
-from django.test.utils import override_settings
 
 from django.conf import settings
 
 
-@override_settings(CELERY_ALWAYS_EAGER=True)
 class AppTest(TestCase):
 
     """Tests creation of applications"""
@@ -77,6 +75,7 @@ class AppTest(TestCase):
         if not os.path.exists(settings.DEIS_LOG_DIR):
             os.mkdir(settings.DEIS_LOG_DIR)
         path = os.path.join(settings.DEIS_LOG_DIR, app_id + '.log')
+        # HACK: remove app lifecycle logs
         if os.path.exists(path):
             os.remove(path)
         url = '/api/apps/{app_id}/logs'.format(**locals())
@@ -84,17 +83,35 @@ class AppTest(TestCase):
         self.assertEqual(response.status_code, 204)
         self.assertEqual(response.data, 'No logs for {}'.format(app_id))
         # write out some fake log data and try again
-        with open(path, 'w') as f:
+        with open(path, 'a') as f:
             f.write(FAKE_LOG_DATA)
         response = self.client.post(url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data, FAKE_LOG_DATA)
+        os.remove(path)
         # test run
         url = '/api/apps/{app_id}/run'.format(**locals())
         body = {'command': 'ls -al'}
         response = self.client.post(url, json.dumps(body), content_type='application/json')
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data[0], 0)
+        # delete file for future runs
+        os.remove(path)
+
+    def test_app_release_notes_in_logs(self):
+        """Verifies that an app's release summary is dumped into the logs."""
+        url = '/api/apps'
+        body = {'cluster': 'autotest', 'id': 'autotest'}
+        response = self.client.post(url, json.dumps(body), content_type='application/json')
+        self.assertEqual(response.status_code, 201)
+        app_id = response.data['id']  # noqa
+        path = os.path.join(settings.DEIS_LOG_DIR, app_id + '.log')
+        url = '/api/apps/{app_id}/logs'.format(**locals())
+        response = self.client.post(url)
+        self.assertIn('autotest created initial release', response.data)
+        self.assertEqual(response.status_code, 200)
+        # delete file for future runs
+        os.remove(path)
 
     def test_app_errors(self):
         cluster_id, app_id = 'autotest', 'autotest-errors'
@@ -117,6 +134,55 @@ class AppTest(TestCase):
             url = '/api/apps/{app_id}/{endpoint}'.format(**locals())
             response = self.client.get(url)
             self.assertEquals(response.status_code, 404)
+
+    def test_admin_can_manage_other_apps(self):
+        """Administrators of Deis should be able to manage all applications.
+        """
+        # log in as non-admin user and create an app
+        self.assertTrue(
+            self.client.login(username='autotest2', password='password'))
+        app_id = 'autotest'
+        url = '/api/apps'
+        body = {'cluster': 'autotest', 'id': app_id}
+        response = self.client.post(url, json.dumps(body), content_type='application/json')
+        # log in as admin, check to see if they have access
+        self.assertTrue(
+            self.client.login(username='autotest', password='password'))
+        url = '/api/apps/{}'.format(app_id)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        # check app logs
+        url = '/api/apps/{app_id}/logs'.format(**locals())
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('autotest2 created initial release', response.data)
+        # run one-off commands
+        url = '/api/apps/{app_id}/run'.format(**locals())
+        body = {'command': 'ls -al'}
+        response = self.client.post(url, json.dumps(body), content_type='application/json')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data[0], 0)
+        # delete the app
+        url = '/api/apps/{}'.format(app_id)
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, 204)
+
+    def test_admin_can_see_other_apps(self):
+        """If a user creates an application, the administrator should be able
+        to see it.
+        """
+        # log in as non-admin user and create an app
+        self.assertTrue(
+            self.client.login(username='autotest2', password='password'))
+        app_id = 'autotest'
+        url = '/api/apps'
+        body = {'cluster': 'autotest', 'id': app_id}
+        response = self.client.post(url, json.dumps(body), content_type='application/json')
+        # log in as admin
+        self.assertTrue(
+            self.client.login(username='autotest', password='password'))
+        response = self.client.get(url)
+        self.assertEqual(response.data['count'], 1)
 
 
 FAKE_LOG_DATA = """

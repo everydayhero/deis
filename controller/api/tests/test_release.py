@@ -11,7 +11,6 @@ import mock
 import requests
 
 from django.test import TransactionTestCase
-from django.test.utils import override_settings
 
 from api.models import Release
 
@@ -23,7 +22,6 @@ def mock_import_repository_task(*args, **kwargs):
     return resp
 
 
-@override_settings(CELERY_ALWAYS_EAGER=True)
 class ReleaseTest(TransactionTestCase):
 
     """Tests push notification from build system"""
@@ -213,3 +211,27 @@ class ReleaseTest(TransactionTestCase):
         release = Release.objects.get(uuid=release3['uuid'])
         # check that the release has push and env change messages
         self.assertIn('autotest deployed ', release.summary)
+
+    @mock.patch('requests.post', mock_import_repository_task)
+    def test_admin_can_create_release(self):
+        """If a non-user creates an app, an admin should be able to create releases."""
+        self.client.login(username='autotest2', password='password')
+        url = '/api/apps'
+        body = {'cluster': 'autotest'}
+        response = self.client.post(url, json.dumps(body), content_type='application/json')
+        self.assertEqual(response.status_code, 201)
+        app_id = response.data['id']
+        self.client.login(username='autotest', password='password')
+        # check that updating config rolls a new release
+        url = '/api/apps/{app_id}/config'.format(**locals())
+        body = {'values': json.dumps({'NEW_URL1': 'http://localhost:8080/'})}
+        response = self.client.post(
+            url, json.dumps(body), content_type='application/json')
+        self.assertEqual(response.status_code, 201)
+        self.assertIn('NEW_URL1', json.loads(response.data['values']))
+        # check to see that an initial release was created
+        url = '/api/apps/{app_id}/releases'.format(**locals())
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        # account for the config release as well
+        self.assertEqual(response.data['count'], 2)

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Unit tests for the Deis api app.
 
@@ -11,7 +12,6 @@ import mock
 import requests
 
 from django.test import TransactionTestCase
-from django.test.utils import override_settings
 
 from api.models import Config
 
@@ -23,7 +23,6 @@ def mock_import_repository_task(*args, **kwargs):
     return resp
 
 
-@override_settings(CELERY_ALWAYS_EAGER=True)
 class ConfigTest(TransactionTestCase):
 
     """Tests setting and updating config values"""
@@ -128,11 +127,59 @@ class ConfigTest(TransactionTestCase):
         self.assertEqual(json.loads(response.data['values'])['PORT'], '5001')
 
     @mock.patch('requests.post', mock_import_repository_task)
+    def test_config_set_unicode(self):
+        """
+        Test that config sets with unicode values are accepted.
+        """
+        url = '/api/apps'
+        body = {'cluster': 'autotest'}
+        response = self.client.post(url, json.dumps(body), content_type='application/json')
+        self.assertEqual(response.status_code, 201)
+        app_id = response.data['id']
+        url = "/api/apps/{app_id}/config".format(**locals())
+        # set an initial config value
+        body = {'values': json.dumps({'POWERED_BY': 'Деис'})}
+        response = self.client.post(url, json.dumps(body), content_type='application/json')
+        self.assertEqual(response.status_code, 201)
+        self.assertIn('POWERED_BY', json.loads(response.data['values']))
+        # reset same config value
+        body = {'values': json.dumps({'POWERED_BY': 'Кроликов'})}
+        response = self.client.post(url, json.dumps(body), content_type='application/json')
+        self.assertEqual(response.status_code, 201)
+        self.assertIn('POWERED_BY', json.loads(response.data['values']))
+        self.assertEqual(json.loads(response.data['values'])['POWERED_BY'], 'Кроликов')
+        # set an integer to test unicode regression
+        body = {'values': json.dumps({'INTEGER': 1})}
+        response = self.client.post(url, json.dumps(body), content_type='application/json')
+        self.assertEqual(response.status_code, 201)
+        self.assertIn('INTEGER', json.loads(response.data['values']))
+        self.assertEqual(json.loads(response.data['values'])['INTEGER'], 1)
+
+    @mock.patch('requests.post', mock_import_repository_task)
     def test_config_str(self):
         """Test the text representation of a node."""
         config5 = self.test_config()
         config = Config.objects.get(uuid=config5['uuid'])
         self.assertEqual(str(config), "{}-{}".format(config5['app'], config5['uuid'][:7]))
+
+    @mock.patch('requests.post', mock_import_repository_task)
+    def test_admin_can_create_config_on_other_apps(self):
+        """If a non-admin creates an app, an administrator should be able to set config
+        values for that app.
+        """
+        self.client.login(username='autotest2', password='password')
+        url = '/api/apps'
+        body = {'cluster': 'autotest'}
+        response = self.client.post(url, json.dumps(body), content_type='application/json')
+        self.assertEqual(response.status_code, 201)
+        app_id = response.data['id']
+        self.client.login(username='autotest', password='password')
+        url = "/api/apps/{app_id}/config".format(**locals())
+        # set an initial config value
+        body = {'values': json.dumps({'PORT': '5000'})}
+        response = self.client.post(url, json.dumps(body), content_type='application/json')
+        self.assertEqual(response.status_code, 201)
+        self.assertIn('PORT', json.loads(response.data['values']))
 
     @mock.patch('requests.post', mock_import_repository_task)
     def test_limit_memory(self):
@@ -348,4 +395,3 @@ class ConfigTest(TransactionTestCase):
         self.assertEqual(self.client.put(url).status_code, 405)
         self.assertEqual(self.client.patch(url).status_code, 405)
         self.assertEqual(self.client.delete(url).status_code, 405)
-        return tags4

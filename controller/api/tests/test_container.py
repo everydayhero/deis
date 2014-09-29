@@ -12,7 +12,6 @@ import requests
 
 from django.contrib.auth.models import User
 from django.test import TransactionTestCase
-from django.test.utils import override_settings
 
 from django_fsm import TransitionNotAllowed
 
@@ -26,7 +25,6 @@ def mock_import_repository_task(*args, **kwargs):
     return resp
 
 
-@override_settings(CELERY_ALWAYS_EAGER=True)
 class ContainerTest(TransactionTestCase):
     """Tests creation of containers on nodes"""
 
@@ -398,5 +396,29 @@ class ContainerTest(TransactionTestCase):
         # scale up to an integer as a sanity check
         url = "/api/apps/{app_id}/scale".format(**locals())
         body = {'web': 1}
+        response = self.client.post(url, json.dumps(body), content_type='application/json')
+        self.assertEqual(response.status_code, 204)
+
+    def test_admin_can_manage_other_containers(self):
+        """If a non-admin user creates a container, an administrator should be able to
+        manage it.
+        """
+        self.client.login(username='autotest2', password='password')
+        url = '/api/apps'
+        body = {'cluster': 'autotest'}
+        response = self.client.post(url, json.dumps(body), content_type='application/json')
+        self.assertEqual(response.status_code, 201)
+        app_id = response.data['id']
+        # post a new build
+        url = "/api/apps/{app_id}/builds".format(**locals())
+        body = {'image': 'autotest/example', 'sha': 'a'*40,
+                'procfile': json.dumps({'web': 'node server.js', 'worker': 'node worker.js'})}
+        response = self.client.post(url, json.dumps(body), content_type='application/json')
+        self.assertEqual(response.status_code, 201)
+        # login as admin
+        self.client.login(username='autotest', password='password')
+        # scale up
+        url = "/api/apps/{app_id}/scale".format(**locals())
+        body = {'web': 4, 'worker': 2}
         response = self.client.post(url, json.dumps(body), content_type='application/json')
         self.assertEqual(response.status_code, 204)
