@@ -4,7 +4,7 @@ coreos:
   etcd:
     # generate a new token for each unique cluster from https://discovery.etcd.io/new
     # uncomment the following line and replace it with your discovery URL
-    discovery: https://discovery.etcd.io/e5951c8acce748e2ee51e067036069a1
+    discovery: https://discovery.etcd.io/ad947558c4f5a27847db3da7d23944f2
     addr: $private_ipv4:4001
     peer-addr: $private_ipv4:7001
     # give etcd more time if it's under heavy load - prevent leader election thrashing
@@ -42,6 +42,25 @@ coreos:
       Type=oneshot
       ExecStart=/usr/bin/systemctl stop update-engine.service
       ExecStartPost=/usr/bin/systemctl mask update-engine.service
+  - name: logspout.service
+    command: start
+    enable: true
+    content: |
+      [Unit]
+      Description=Logspout
+      After=docker.service
+      Requires=docker.service
+
+      [Service]
+      TimeoutStartSec=0
+      ExecStartPre=-/usr/bin/docker kill logspout
+      ExecStartPre=-/usr/bin/docker rm logspout
+      ExecStartPre=/usr/bin/docker pull progrium/logspout:latest
+      ExecStart=/usr/bin/docker run --name logspout -h %H -p 8765:8765 -v=/var/run/docker.sock:/tmp/docker.sock progrium/logspout:latest syslog://logs2.papertrailapp.com:53601
+      ExecStop=/usr/bin/docker stop progrium/logspout:latest
+
+      [Install]
+      WantedBy=multi-user.target
 write_files:
   - path: /etc/deis-release
     content: |
