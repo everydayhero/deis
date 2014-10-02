@@ -4,7 +4,7 @@ coreos:
   etcd:
     # generate a new token for each unique cluster from https://discovery.etcd.io/new
     # uncomment the following line and replace it with your discovery URL
-    discovery: https://discovery.etcd.io/ad947558c4f5a27847db3da7d23944f2
+    discovery: https://discovery.etcd.io/06107a3eae62168ec0641adb3ec9c0ce
     addr: $private_ipv4:4001
     peer-addr: $private_ipv4:7001
     # give etcd more time if it's under heavy load - prevent leader election thrashing
@@ -56,7 +56,7 @@ coreos:
       ExecStartPre=-/usr/bin/docker kill logspout
       ExecStartPre=-/usr/bin/docker rm logspout
       ExecStartPre=/usr/bin/docker pull progrium/logspout:latest
-      ExecStart=/usr/bin/docker run --name logspout -h %H -p 8765:8765 -v=/var/run/docker.sock:/tmp/docker.sock progrium/logspout:latest syslog://logs2.papertrailapp.com:53601
+      ExecStart=/usr/bin/docker run --name logspout -h %H -v=/var/run/docker.sock:/tmp/docker.sock progrium/logspout:latest syslog://logs.papertrailapp.com:57206
       ExecStop=/usr/bin/docker stop progrium/logspout:latest
 
       [Install]
