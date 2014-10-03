@@ -4,7 +4,7 @@ coreos:
   etcd:
     # generate a new token for each unique cluster from https://discovery.etcd.io/new
     # uncomment the following line and replace it with your discovery URL
-    discovery: https://discovery.etcd.io/06107a3eae62168ec0641adb3ec9c0ce
+    discovery: https://discovery.etcd.io/8bc01d45bff95b27982d555bacfa5136
     addr: $private_ipv4:4001
     peer-addr: $private_ipv4:7001
     # give etcd more time if it's under heavy load - prevent leader election thrashing
